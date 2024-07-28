@@ -1,4 +1,4 @@
-# md_to_conf for Confluence protected by Cloudflare Acess
+# md_to_conf for Confluence protected by Cloudflare Access
 
 ## Usage
 
