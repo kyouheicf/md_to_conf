@@ -422,7 +422,7 @@ def get_page(title):
     session = requests.Session()
 
     if PA_TOKEN:
-        session.headers.update({'Authorization': 'Bearer ' + PA_TOKEN})
+        session.headers.update({'cf-access-token': '' + PA_TOKEN})
     else:
         session.auth = (USERNAME, API_KEY)
 
@@ -699,7 +699,7 @@ def create_page(title, body, ancestors):
 
     session = requests.Session()
     if PA_TOKEN:
-        session.headers.update({'Authorization': 'Bearer ' + PA_TOKEN})
+        session.headers.update({'cf-access-token': '' + PA_TOKEN})
     else:
         session.auth = (USERNAME, API_KEY)
     session.headers.update({'Content-Type': 'application/json'})
@@ -774,7 +774,7 @@ def delete_page(page_id):
 
     session = requests.Session()
     if PA_TOKEN:
-        session.headers.update({'Authorization': 'Bearer ' + PA_TOKEN})
+        session.headers.update({'cf-access-token': '' + PA_TOKEN})
     else:
         session.auth = (USERNAME, API_KEY)
     session.headers.update({'Content-Type': 'application/json'})
@@ -816,7 +816,7 @@ def update_page(page_id, title, body, version, ancestors, properties, attachment
 
     session = requests.Session()
     if PA_TOKEN:
-        session.headers.update({'Authorization': 'Bearer ' + PA_TOKEN})
+        session.headers.update({'cf-access-token': '' + PA_TOKEN})
     else:
         session.auth = (USERNAME, API_KEY)
     session.headers.update({'Content-Type': 'application/json'})
@@ -902,7 +902,7 @@ def get_attachment(page_id, filename):
 
     session = requests.Session()
     if PA_TOKEN:
-        session.headers.update({'Authorization': 'Bearer ' + PA_TOKEN})
+        session.headers.update({'cf-access-token': 'Bearer ' + PA_TOKEN})
     else:
         session.auth = (USERNAME, API_KEY)
 
@@ -951,7 +951,7 @@ def upload_attachment(page_id, file, comment):
 
     session = requests.Session()
     if PA_TOKEN:
-        session.headers.update({'Authorization': 'Bearer ' + PA_TOKEN})
+        session.headers.update({'cf-access-token': '' + PA_TOKEN})
     else:
         session.auth = (USERNAME, API_KEY)
     session.headers.update({'X-Atlassian-Token': 'no-check'})
@@ -1028,6 +1028,102 @@ def main():
 
     if CONTENTS:
         html = add_contents(html)
+
+    # Jira Macro Converter
+    links = re.findall(r'<a href=".+?">.+?</a>', html)
+    if links:
+        for link in links:
+            matches = re.search(r'<a href="(.+?)">(.+?)</a>', link)
+            ref = matches.group(1)
+            alt = matches.group(2)
+            jira_url = "jira." + '.'.join(ORGNAME.split('.')[-2:])
+            if urllib.parse.urlparse(ref).hostname == jira_url:
+                key = ref.rsplit('/', 1)[-1]
+                html = html.replace(
+                    link, '<ac:structured-macro ac:name="jiraissues"><ac:parameter ac:name="anonymous">true</ac:parameter><ac:parameter ac:name="key">%s</ac:parameter></ac:structured-macro>' % key)
+
+    # DONE Status Macro Converter
+    # statuses = re.findall(r'<td>DONE</td>', html)
+    statuses = re.findall(r'<td>:white_check_mark:</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                # status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Green</ac:parameter><ac:parameter ac:name="title">DONE</ac:parameter></ac:structured-macro></td>')
+                status, '<td><ac:emoticon ac:name="tick"/></td>')
+
+    # WAIT Status Macro Converter
+    # statuses = re.findall(r'<td>WAIT</td>', html)
+    statuses = re.findall(r'<td>:pushpin:</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+    #            status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Blue</ac:parameter><ac:parameter ac:name="title">WAIT</ac:parameter></ac:structured-macro></td>')
+                status, '<td><ac:emoticon ac:name="information"/></td>')
+    statuses = re.findall(r'<td>WAIT</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Blue</ac:parameter><ac:parameter ac:name="title">WAIT</ac:parameter></ac:structured-macro></td>')
+            # status, '<td><ac:emoticon ac:name="information"/></td>')
+
+    # ROADMAP Status Macro Converter
+    statuses = re.findall(r'<td>ROADMAP</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Yellow</ac:parameter><ac:parameter ac:name="title">ROADMAP</ac:parameter></ac:structured-macro></td>')
+
+    # SPEC Status Macro Converter
+    statuses = re.findall(r'<td>SPEC</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Blue</ac:parameter><ac:parameter ac:name="title">SPEC</ac:parameter></ac:structured-macro></td>')
+
+    # BLOG Status Macro Converter
+    statuses = re.findall(r'<td>BLOG</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Green</ac:parameter><ac:parameter ac:name="title">BLOG</ac:parameter></ac:structured-macro></td>')
+
+    # BUG Status Macro Converter
+    statuses = re.findall(r'<td>BUG</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Red</ac:parameter><ac:parameter ac:name="title">BUG</ac:parameter></ac:structured-macro></td>')
+
+    # APPROVED Status Macro Converter
+    statuses = re.findall(r'<td>APPROVED</td>', html)
+    # statuses = re.findall(r'<td>:heavy_plus_sign:</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Grey</ac:parameter><ac:parameter ac:name="title">APPROVED</ac:parameter></ac:structured-macro></td>')
+                # status, '<td><ac:emoticon ac:name="plus"/></td>')
+
+    # GOING Status Macro Converter
+    # statuses = re.findall(r'<td>GOING</td>', html)
+    statuses = re.findall(r'<td>:star:</td>', html)
+    if statuses:
+        for status in statuses:
+            html = html.replace(
+                # status, '<td><ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="colour">Yellow</ac:parameter><ac:parameter ac:name="title">GOING</ac:parameter></ac:structured-macro></td>')
+                status, '<td><ac:emoticon ac:name="yellow-star"/></td>')
+
+    # Task Converter
+    #
+    # <ul>
+    # <li>[ ] doing task</li>
+    # <li>[x] done task</li>
+    # </ul>
+    #
+    # <ac:task-list>
+    # <ac:task><ac:task-status>incomplete</ac:task-status><ac:task-body><span class="placeholder-inline-tasks">doing task</span></ac:task-body></ac:task>
+    # <ac:task><ac:task-status>complete</ac:task-status><ac:task-body><span class="placeholder-inline-tasks">done task</span></ac:task-body></ac:task>
+    # </ac:task-list>
+
 
     html = process_refs(html)
 
