@@ -9,6 +9,6 @@ cloudflared access login https://$CONFLUENCE_ORGNAME > /dev/null
 
 export CONFLUENCE_PERSONAL_ACCESS_TOKEN=$(cloudflared access token -app=https://${CONFLUENCE_ORGNAME})
 
-python3 ~/md_to_conf/md2conf.py YOUR_MARKDOWN_FILE_FULLPATH.md '~USERNAME' -l DEBUG
+python3 ~/md_to_conf/md2conf.py YOUR_MARKDOWN_FILE_FULLPATH.md '~USERNAME' -l DEBUG --label a --label b
 ```
 

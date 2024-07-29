@@ -848,6 +848,7 @@ def update_page(page_id, title, body, version, ancestors, properties, attachment
             labels.append({"name": value})
 
         page_json['metadata']['labels'] = labels
+        LOGGER.info('pages_json: %s', page_json)
 
     response = session.put(url, data=json.dumps(page_json))
 
